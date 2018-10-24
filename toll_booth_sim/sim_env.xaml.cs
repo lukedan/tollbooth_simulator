@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -478,7 +478,7 @@ namespace toll_booth_sim {
 						focus_change?.Invoke();
 					}
 					if (focused_object == null) {
-						_drag_offset = _offset - (Vector)_last_mouse_pos;
+						_drag_offset = -(Vector)_last_mouse_pos;
 					} else if (focused_object is road_node) {
 						if (creating_lane) {
 							_lane_from = (road_node)focused_object;
@@ -516,7 +516,7 @@ namespace toll_booth_sim {
 			Point newmouse = _invtrans.Transform(e.GetPosition(this));
 			if (e.LeftButton == MouseButtonState.Pressed) {
 				if (focused_object == null) {
-					_offset = (Vector)(newmouse + _drag_offset);
+					_offset += (Vector)(newmouse + _drag_offset);
 					newmouse = _last_mouse_pos;
 					_cache_trans();
 				} else if (focused_object is road_node) {
@@ -556,9 +556,11 @@ namespace toll_booth_sim {
 		protected override void OnMouseWheel(MouseWheelEventArgs e) {
 			base.OnMouseWheel(e);
 
-			double deltaz = e.Delta * 0.01;
-			_offset = (Vector)(_last_mouse_pos - (Vector)(_last_mouse_pos - _offset) * (_zoom + deltaz) / _zoom);
-			_zoom += deltaz;
+			double newzoom = _zoom * Math.Pow(1.1, e.Delta / 120.0);
+            // (_offset + _last_mouse_pos) * _zoom = (_offset' + _last_mouse_pos) * _zoom'
+            // (_offset + _last_mouse_pos) * _zoom / _zoom' - _last_mouse_pos = _offset'
+            _offset = ((Vector)_last_mouse_pos + _offset) * (_zoom / newzoom) - (Vector)_last_mouse_pos;
+			_zoom = newzoom;
 			_cache_trans();
 			InvalidateVisual();
 		}
